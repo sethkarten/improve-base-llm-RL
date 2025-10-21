@@ -1,0 +1,52 @@
+import amago.nets.actor_critic
+import amago.nets.traj_encoders
+import amago.agent
+import amago.experiment
+
+# Use Gemma-based timestep encoder
+# Note: GemmaTstepEncoder must be imported in train.py before loading this config
+MetamonAMAGOExperiment.agent_type = @agent.Agent
+MetamonAMAGOExperiment.tstep_encoder_type = @GemmaTstepEncoder
+MetamonAMAGOExperiment.traj_encoder_type = @traj_encoders.TformerTrajEncoder
+MetamonAMAGOExperiment.max_seq_len = 200
+
+# Actor head
+Agent.actor_type = @MetamonMaskedActor
+Agent.pass_obs_keys_to_actor = ["illegal_actions"]
+MetamonMaskedActor.activation = "leaky_relu"
+MetamonMaskedActor.n_layers = 2
+MetamonMaskedActor.d_hidden = 512  # Increased for Gemma's richer embeddings
+
+# Critic head
+Agent.critic_type = @actor_critic.NCritics
+actor_critic.NCritics.activation = "leaky_relu"
+actor_critic.NCritics.n_layers = 2
+actor_critic.NCritics.d_hidden = 512
+Agent.popart = True
+Agent.num_critics = 4
+
+# Gemma timestep encoder configuration
+GemmaTstepEncoder.model_name = "google/gemma-3-270m"
+GemmaTstepEncoder.use_lora = True
+GemmaTstepEncoder.lora_r = 16
+GemmaTstepEncoder.lora_alpha = 32
+GemmaTstepEncoder.lora_dropout = 0.05
+GemmaTstepEncoder.freeze_base_model = False
+GemmaTstepEncoder.use_4bit = False  # Set to True if using limited VRAM
+GemmaTstepEncoder.extra_emb_dim = 18
+GemmaTstepEncoder.numerical_emb_dim = 256  # Larger for richer fusion with Gemma
+GemmaTstepEncoder.dropout = 0.05
+
+# AMAGO trajectory encoder
+# Gemma's hidden size is 2688, plus numerical_emb_dim = 256
+# Total tstep encoder output = 2688 + 256 = 2944
+# Use larger trajectory encoder to handle this
+traj_encoders.TformerTrajEncoder.n_layers = 4
+traj_encoders.TformerTrajEncoder.n_heads = 8
+traj_encoders.TformerTrajEncoder.d_ff = 2048
+traj_encoders.TformerTrajEncoder.d_model = 1024  # Increased to handle Gemma embeddings
+traj_encoders.TformerTrajEncoder.normformer_norms = True
+traj_encoders.TformerTrajEncoder.sigma_reparam = True
+traj_encoders.TformerTrajEncoder.norm = "layer"
+traj_encoders.TformerTrajEncoder.head_scaling = True
+traj_encoders.TformerTrajEncoder.activation = "leaky_relu"

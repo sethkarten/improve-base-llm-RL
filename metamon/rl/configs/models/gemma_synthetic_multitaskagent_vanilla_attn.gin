@@ -1,0 +1,58 @@
+import amago.nets.actor_critic
+import amago.nets.traj_encoders
+import amago.nets.transformer
+import amago.agent
+import amago.experiment
+
+# Gemma-based SyntheticRLV2-style agent with VanillaAttention (no flash-attn required)
+# Note: GemmaTstepEncoder must be imported in train.py before loading this config
+
+MetamonAMAGOExperiment.agent_type = @agent.MultiTaskAgent
+MetamonAMAGOExperiment.tstep_encoder_type = @GemmaTstepEncoder
+MetamonAMAGOExperiment.traj_encoder_type = @traj_encoders.TformerTrajEncoder
+MetamonAMAGOExperiment.max_seq_len = 128
+
+# Actor head
+MultiTaskAgent.actor_type = @MetamonMaskedActor
+MultiTaskAgent.pass_obs_keys_to_actor = ["illegal_actions"]
+MetamonMaskedActor.activation = "leaky_relu"
+MetamonMaskedActor.n_layers = 2
+MetamonMaskedActor.d_hidden = 512
+
+# Critic head - NCriticsTwoHot for distributional RL
+MultiTaskAgent.critic_type = @actor_critic.NCriticsTwoHot
+actor_critic.NCriticsTwoHot.activation = "leaky_relu"
+actor_critic.NCriticsTwoHot.n_layers = 2
+actor_critic.NCriticsTwoHot.d_hidden = 512
+MultiTaskAgent.popart = True
+MultiTaskAgent.num_critics = 6
+
+# Two-hot distributional value estimation
+actor_critic.NCriticsTwoHot.output_bins = 96
+actor_critic.NCriticsTwoHot.min_return = -1100
+actor_critic.NCriticsTwoHot.max_return = 1100
+actor_critic.NCriticsTwoHot.use_symlog = False
+
+# Gemma timestep encoder configuration
+GemmaTstepEncoder.model_name = "google/gemma-3-270m"
+GemmaTstepEncoder.use_lora = True
+GemmaTstepEncoder.lora_r = 16
+GemmaTstepEncoder.lora_alpha = 32
+GemmaTstepEncoder.lora_dropout = 0.05
+GemmaTstepEncoder.freeze_base_model = False
+GemmaTstepEncoder.use_4bit = False
+GemmaTstepEncoder.extra_emb_dim = 18
+GemmaTstepEncoder.numerical_emb_dim = 256
+GemmaTstepEncoder.dropout = 0.05
+
+# AMAGO trajectory encoder with EXPLICIT VanillaAttention
+traj_encoders.TformerTrajEncoder.attention_type = @amago.nets.transformer.VanillaAttention
+traj_encoders.TformerTrajEncoder.n_layers = 9
+traj_encoders.TformerTrajEncoder.n_heads = 20
+traj_encoders.TformerTrajEncoder.d_ff = 5120
+traj_encoders.TformerTrajEncoder.d_model = 1280
+traj_encoders.TformerTrajEncoder.normformer_norms = True
+traj_encoders.TformerTrajEncoder.sigma_reparam = True
+traj_encoders.TformerTrajEncoder.norm = "layer"
+traj_encoders.TformerTrajEncoder.head_scaling = True
+traj_encoders.TformerTrajEncoder.activation = "leaky_relu"

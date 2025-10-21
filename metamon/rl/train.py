@@ -24,6 +24,9 @@ from metamon.rl.metamon_to_amago import (
 )
 from metamon import baselines
 
+# Import Gemma encoder for gin configs
+from metamon.il.gemma_model import GemmaTstepEncoder
+
 
 WANDB_PROJECT = os.environ.get("METAMON_WANDB_PROJECT")
 WANDB_ENTITY = os.environ.get("METAMON_WANDB_ENTITY")
@@ -231,6 +234,7 @@ def create_offline_rl_trainer(
     config = {
         "MetamonTstepEncoder.tokenizer": obs_space.tokenizer,
         "MetamonPerceiverTstepEncoder.tokenizer": obs_space.tokenizer,
+        "GemmaTstepEncoder.pokemon_tokenizer": obs_space.tokenizer,
     }
     if manual_gin_overrides is not None:
         config.update(manual_gin_overrides)

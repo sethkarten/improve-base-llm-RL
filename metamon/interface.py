@@ -1223,7 +1223,7 @@ class ExpandedObservationSpace(DefaultObservationSpace):
         return ["<blank>"] * blanks
 
     def _get_move_numerical_features(
-        self, move: UniversalMove, active: np.bool
+        self, move: UniversalMove, active: bool
     ) -> list[float]:
         out = super()._get_move_numerical_features(move, active)
         if active:
