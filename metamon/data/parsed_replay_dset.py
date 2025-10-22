@@ -107,7 +107,7 @@ class ParsedReplayDataset(Dataset):
         shuffle: bool = False,
     ):
         formats = formats or metamon.SUPPORTED_BATTLE_FORMATS
-
+        
         if dset_root is None:
             for format in formats:
                 path_to_format_data = download_parsed_replays(format)

@@ -298,7 +298,7 @@ def create_offline_rl_trainer(
         wandb_project=wandb_project,
         wandb_entity=wandb_entity,
         verbose=True,
-        log_interval=300,
+        log_interval=200,
         ## replay ##
         padded_sampling="none",
         dloader_workers=dloader_workers,

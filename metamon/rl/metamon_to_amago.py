@@ -618,28 +618,28 @@ class MetamonAMAGOExperiment(amago.Experiment):
     Adds actions masking to the main AMAGO experiment, and leaves room for further tweaks.
     """
 
-    def log(
-        self, metrics_dict: dict[str, torch.Tensor | int | float], key: str
-    ) -> None:
-        """Override to add console output for training losses."""
-        # Call parent to handle wandb logging
-        super().log(metrics_dict, key)
+    # def log(
+    #     self, metrics_dict: dict[str, torch.Tensor | int | float], key: str
+    # ) -> None:
+    #     """Override to add console output for training losses."""
+    #     # Call parent to handle wandb logging
+    #     super().log(metrics_dict, key)
 
-        # Print training losses to console
-        if key == "train-update" and self.accelerator.is_main_process:
-            log_dict = {}
-            for k, v in metrics_dict.items():
-                if isinstance(v, torch.Tensor):
-                    if v.ndim == 0:
-                        log_dict[k] = v.detach().cpu().float().item()
-                else:
-                    log_dict[k] = v
+    #     # Print training losses to console
+    #     if key == "train-update" and self.accelerator.is_main_process:
+    #         log_dict = {}
+    #         for k, v in metrics_dict.items():
+    #             if isinstance(v, torch.Tensor):
+    #                 if v.ndim == 0:
+    #                     log_dict[k] = v.detach().cpu().float().item()
+    #             else:
+    #                 log_dict[k] = v
 
-            # Print key metrics to console
-            if "Actor Loss" in log_dict and "Critic Loss" in log_dict:
-                print(f"Step {self.x_axis_metrics().get('Training Steps', '?')}: "
-                      f"Actor Loss={log_dict['Actor Loss']:.4f}, "
-                      f"Critic Loss={log_dict['Critic Loss']:.4f}")
+    #         # Print key metrics to console
+    #         if "Actor Loss" in log_dict and "Critic Loss" in log_dict:
+    #             print(f"Step {self.x_axis_metrics().get('Training Steps', '?')}: "
+    #                   f"Actor Loss={log_dict['Actor Loss']:.4f}, "
+    #                   f"Critic Loss={log_dict['Critic Loss']:.4f}")
 
     def init_envs(self):
         out = super().init_envs()

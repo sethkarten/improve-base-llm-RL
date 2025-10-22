@@ -296,12 +296,13 @@ class Run:
         for epoch in range(self.epoch, self.epochs):
             train_acc = []
             train_top2_acc = []
+            train_loss = []
             self.policy.train()
             for step, (inputs, labels, action_masks) in tqdm(
                 enumerate(self.train_dloader),
                 colour="white",
                 total=len(self.train_dloader),
-                desc=f"Epoch: {epoch} (Train)",
+                desc=f"Epoch: {epoch} (Train) Loss: {sum(train_loss) / len(train_loss):.4f} Acc: {sum(train_acc) / len(train_acc):.4f}",
             ):
                 log_step = step % self.log_interval == 0
                 step_loss, step_acc, step_top2_acc = self.train_step(
@@ -309,6 +310,7 @@ class Run:
                 )
                 train_acc.append(step_acc)
                 train_top2_acc.append(step_top2_acc)
+                train_loss.append(step_loss)
                 if step and step % self.log_interval == 0:
                     recent_acc = train_acc[-self.log_interval :]
                     recent_top2_acc = train_top2_acc[-self.log_interval :]
