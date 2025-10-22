@@ -7,9 +7,7 @@ os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True'
 
 import torch
 # Enable TF32 for faster matmuls on H100/A100 (20% speedup)
-# Using new PyTorch 2.9+ API
 torch.set_float32_matmul_precision('high')  # 'high' = TF32, 'highest' = FP32, 'medium' = less precise
-torch.backends.cudnn.conv.fp32_precision = 'tf32'
 
 import wandb
 
@@ -159,7 +157,7 @@ def add_cli(parser):
         type=int,
         nargs="*",
         default=[1, 2, 3, 4, 9],
-        help="Generations (of OU) to play against heuristics between training epochs. Win rates usually saturate at 90\%+ quickly, so this is mostly a sanity-check. Reduce gens to save time on launch! Use `--eval_gens` (no arguments) to disable evaluation.",
+        help="Generations (of OU) to play against heuristics between training epochs. Win rates usually saturate at 90%+ quickly, so this is mostly a sanity-check. Reduce gens to save time on launch! Use `--eval_gens` (no arguments) to disable evaluation.",
     )
     parser.add_argument(
         "--formats",
