@@ -4,17 +4,17 @@
 #SBATCH --error=logs/gemma_lm_h100_%j.err
 #SBATCH -N 1 #nodes
 #SBATCH -n 1 #tasks
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
-#SBATCH --time=23:59:00
-#SBATCH --partition=pli-lc
-#SBATCH --account=chi_jin_group
+#SBATCH --time=00:59:00
+#SBATCH --partition=pli
+#SBATCH --account=multiagentllm
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=sk9014@princeton.edu
 
 echo "=========================================="
-echo "Metamon Gemma LM RL Training - 8x H100"
+echo "Metamon Gemma LM RL Training - 2 GPUs"
 echo "=========================================="
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
@@ -25,18 +25,18 @@ echo ""
 echo "Configuration:"
 echo "  - Model: google/gemma-3-270m (FULL FINE-TUNING)"
 echo "  - Agent: GemmaLMAgent (LM head as actor)"
-echo "  - Batch size per GPU: 2"
+echo "  - Batch size per GPU: 16"
 echo "  - Gradient accumulation: 8"
-echo "  - Effective batch size: 128 (2 * 8 * 8)"
+echo "  - Effective batch size: 256 (16 * 8 * 2)"
 echo "  - Epochs: 10"
-echo "  - Max seq length: 32"
+echo "  - Max seq length: 16"
 echo "  - Format: gen9ou"
 echo "  - Quantization: NONE (full bf16)"
 echo "  - LoRA: DISABLED (full fine-tuning)"
-echo "  - Gradient Checkpointing: DISABLED"
+echo "  - Gradient Checkpointing: ENABLED"
 echo "  - Mixed Precision: bfloat16"
-echo "  - Attention: SDPA (PyTorch native)"
-echo "  - Validation: Gen 9 OU vs baselines"
+echo "  - Attention: Flash Attention"
+echo "  - Validation: NONE (Gen 9 OU vs baselines)"
 echo "  - Mode: OFFLINE (HuggingFace + WandB)"
 echo "=========================================="
 echo ""
@@ -58,12 +58,14 @@ export WANDB_MODE=offline
 export TOKENIZERS_PARALLELISM=false
 
 # H100-specific NCCL optimizations
-export NCCL_DEBUG=WARN
-export NCCL_IB_DISABLE=0
-export NCCL_NET_GDR_LEVEL=5
-export NCCL_NSOCKS_PERTHREAD=4
-export NCCL_SOCKET_NTHREADS=2
-export NCCL_P2P_LEVEL=NVL
+# export NCCL_DEBUG=WARN
+# export NCCL_IB_DISABLE=0
+# export NCCL_NET_GDR_LEVEL=5
+# export NCCL_NSOCKS_PERTHREAD=4
+# export NCCL_SOCKET_NTHREADS=2
+# export NCCL_P2P_LEVEL=NVL
+
+# Enable TF32 for faster matmuls on H100 (Ampere+)
 export NVIDIA_TF32_OVERRIDE=1
 
 export MASTER_PORT=$((29500 + SLURM_JOB_ID % 1000))
@@ -77,7 +79,7 @@ echo ""
 
 # Print Python/PyTorch info
 python --version
-python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
+python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}'); torch.set_float32_matmul_precision('high'); print(f'TF32 matmul precision: {torch.get_float32_matmul_precision()}')"
 echo ""
 
 echo "Starting training..."
@@ -90,7 +92,7 @@ echo ""
 # Run training with accelerate for multi-GPU
 # AMAGO uses Accelerate internally for distributed training
 accelerate launch \
-    --num_processes 8 \
+    --num_processes 2 \
     --num_machines 1 \
     --mixed_precision bf16 \
     --multi_gpu \
@@ -101,10 +103,10 @@ accelerate launch \
     --train_gin_config binary_rl.gin \
     --save_dir /scratch/gpfs/sk9014/metamon_checkpoints/ \
     --formats gen9ou \
-    --batch_size_per_gpu 2 \
+    --batch_size_per_gpu 16 \
     --grad_accum 8 \
     --epochs 10 \
-    --dloader_workers 8 \
+    --dloader_workers 32 \
     --eval_gens \
     --log
 

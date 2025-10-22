@@ -4,12 +4,12 @@ import amago.experiment
 # Gemma with LM head as actor - H100 FULL FINE-TUNING
 # Actor uses Gemma's language modeling head (predicts action tokens)
 # Critic uses separate MLP head (predicts values)
-# No LoRA, No quantization, No gradient checkpointing - full training on H100s
+# No LoRA, No quantization, gradient checkpointing enabled - full training on H100s
 
 MetamonAMAGOExperiment.agent_type = @GemmaLMAgent
 MetamonAMAGOExperiment.tstep_encoder_type = @MinimalTstepEncoder
 MetamonAMAGOExperiment.traj_encoder_type = @GemmaLMTrajEncoder
-MetamonAMAGOExperiment.max_seq_len = 32
+MetamonAMAGOExperiment.max_seq_len = 16
 # val_interval controlled by train.py (default 1 = every epoch)
 MetamonAMAGOExperiment.start_learning_at_epoch = 0  # Start training immediately
 MetamonAMAGOExperiment.train_timesteps_per_epoch = 0  # Pure offline, no env interaction
@@ -37,7 +37,7 @@ GemmaLMTrajEncoder.lora_r = 8  # Ignored when use_lora=False
 GemmaLMTrajEncoder.lora_alpha = 16  # Ignored when use_lora=False
 GemmaLMTrajEncoder.lora_dropout = 0.05  # Ignored when use_lora=False
 GemmaLMTrajEncoder.use_4bit = False  # Full precision (bf16 via mixed_precision)
-GemmaLMTrajEncoder.gradient_checkpointing = False  # Disabled for speed on H100
+GemmaLMTrajEncoder.gradient_checkpointing = True  # Enabled to allow larger batch sizes
 GemmaLMTrajEncoder.max_tokens_per_obs = 256
 GemmaLMTrajEncoder.separator = " | "
 GemmaLMTrajEncoder.action_space_size = 13  # Metamon's DefaultActionSpace

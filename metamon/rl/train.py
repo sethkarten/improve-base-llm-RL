@@ -5,6 +5,12 @@ from typing import List, Optional
 # Set PyTorch allocator to reduce fragmentation (using new env var name)
 os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True'
 
+import torch
+# Enable TF32 for faster matmuls on H100/A100 (20% speedup)
+# Using new PyTorch 2.9+ API
+torch.set_float32_matmul_precision('high')  # 'high' = TF32, 'highest' = FP32, 'medium' = less precise
+torch.backends.cudnn.conv.fp32_precision = 'tf32'
+
 import wandb
 
 import amago
@@ -298,7 +304,7 @@ def create_offline_rl_trainer(
         wandb_project=wandb_project,
         wandb_entity=wandb_entity,
         verbose=True,
-        log_interval=200,
+        log_interval=10,  # Log metrics every 10 iterations (~8 seconds at 1.3 it/s)
         ## replay ##
         padded_sampling="none",
         dloader_workers=dloader_workers,
