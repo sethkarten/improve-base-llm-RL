@@ -95,6 +95,7 @@ class GemmaLMTrajEncoder(TrajEncoder):
         else:
             self.gemma = AutoModelForCausalLM.from_pretrained(
                 model_name,
+                torch_dtype=torch.bfloat16,  # Required for Flash Attention 2
                 attn_implementation=attn_impl,
             )
 

@@ -5,9 +5,9 @@ from typing import List, Optional
 # Set PyTorch allocator to reduce fragmentation (using new env var name)
 os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True'
 
-import torch
+# import torch
 # Enable TF32 for faster matmuls on H100/A100 (20% speedup)
-torch.set_float32_matmul_precision('high')  # 'high' = TF32, 'highest' = FP32, 'medium' = less precise
+# torch.set_float32_matmul_precision('high')  # 'high' = TF32, 'highest' = FP32, 'medium' = less precise
 
 import wandb
 
