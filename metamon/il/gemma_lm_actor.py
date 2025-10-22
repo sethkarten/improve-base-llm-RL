@@ -75,12 +75,10 @@ class GemmaLMTrajEncoder(TrajEncoder):
         # Get separator token ID
         self.sep_token_id = self.tokenizer.encode(separator, add_special_tokens=False)[0]
 
-        # Load Gemma model (we'll use its LM head)
-        # Use SDPA (PyTorch's native scaled dot product attention)
-        # Flash Attention 2 doesn't support RTX 5090 (Blackwell) yet
-        attn_impl = "sdpa"
-        print(f"Using {attn_impl} (PyTorch native fast attention - compatible with RTX 5090)")
-
+        # Use Flash Attention 2 (PyTorch's native scaled dot product attention)
+        attn_impl = "flash_attention_2"
+        print(f"Using {attn_impl}")
+        
         if use_4bit:
             quantization_config = BitsAndBytesConfig(
                 load_in_4bit=True,
@@ -141,8 +139,8 @@ class GemmaLMTrajEncoder(TrajEncoder):
 
         print(f"GemmaLMTrajEncoder: max_seq_len={max_seq_len}, "
               f"max_tokens_per_obs={max_tokens_per_obs}, output_dim={self._emb_dim}")
-        print(f"Action 0: '{self.action_texts[0]}' -> {self.action_token_sequences[0].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
-        print(f"Action 9: '{self.action_texts[9]}' -> {self.action_token_sequences[9].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
+        # print(f"Action 0: '{self.action_texts[0]}' -> {self.action_token_sequences[0].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
+        # print(f"Action 9: '{self.action_texts[9]}' -> {self.action_token_sequences[9].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
 
     def _define_action_texts(self):
         """
@@ -180,7 +178,7 @@ class GemmaLMTrajEncoder(TrajEncoder):
         for text in action_texts:
             tokens = self.tokenizer.encode(text, add_special_tokens=False)
             # Append EOS token so model learns to terminate sequence
-            tokens.append(self.tokenizer.eos_token_id)
+            # tokens.append(self.tokenizer.eos_token_id)
             action_token_sequences.append(torch.tensor(tokens))
 
         return action_texts, action_token_sequences
