@@ -141,8 +141,8 @@ class GemmaLMTrajEncoder(TrajEncoder):
 
         print(f"GemmaLMTrajEncoder: max_seq_len={max_seq_len}, "
               f"max_tokens_per_obs={max_tokens_per_obs}, output_dim={self._emb_dim}")
-        print(f"Action 0: '{self.action_texts[0]}' -> {self.action_token_sequences[0].tolist()}")
-        print(f"Action 9: '{self.action_texts[9]}' -> {self.action_token_sequences[9].tolist()}")
+        print(f"Action 0: '{self.action_texts[0]}' -> {self.action_token_sequences[0].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
+        print(f"Action 9: '{self.action_texts[9]}' -> {self.action_token_sequences[9].tolist()} (last={self.tokenizer.eos_token_id} is EOS)")
 
     def _define_action_texts(self):
         """
@@ -175,9 +175,12 @@ class GemmaLMTrajEncoder(TrajEncoder):
             text = f"tera move {i+1}"
             action_texts.append(text)
 
-        # Tokenize all actions
+        # Tokenize all actions and append EOS token
+        # The model should learn to output EOS after generating the action
         for text in action_texts:
             tokens = self.tokenizer.encode(text, add_special_tokens=False)
+            # Append EOS token so model learns to terminate sequence
+            tokens.append(self.tokenizer.eos_token_id)
             action_token_sequences.append(torch.tensor(tokens))
 
         return action_texts, action_token_sequences
