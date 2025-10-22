@@ -225,7 +225,14 @@ class MetamonAMAGOWrapper(amago.envs.AMAGOEnv):
                 ] / (info["valid_action_count"] + info["invalid_action_count"])
             return next_tstep, reward, terminated, truncated, info
         except Exception as e:
-            print(e)
+            import traceback
+            print(f"\n{'='*80}")
+            print(f"EXCEPTION IN STEP: {type(e).__name__}: {e}")
+            print(f"Action: {action}")
+            print(f"Action type: {type(action)}, dtype: {getattr(action, 'dtype', 'N/A')}, shape: {getattr(action, 'shape', 'N/A')}")
+            print("Full traceback:")
+            traceback.print_exc()
+            print(f"{'='*80}\n")
             print("Force resetting due to long-tail error")
             self.reset()
             next_tstep, reward, terminated, truncated, info = self.step(action)
@@ -620,6 +627,10 @@ class MetamonAMAGOExperiment(amago.Experiment):
         amago.utils.call_async_env(self.val_envs, "resume_from_break")
         out = super().evaluate_val()
         amago.utils.call_async_env(self.val_envs, "take_long_break")
+        # Clear CUDA cache after validation to free memory for training
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         return out
 
     def edit_actor_mask(

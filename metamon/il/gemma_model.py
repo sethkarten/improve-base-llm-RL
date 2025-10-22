@@ -15,6 +15,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 import amago
 from amago.nets.tstep_encoders import TstepEncoder
+from amago.nets.traj_encoders import TrajEncoder
 from amago.nets.utils import symlog
 
 
@@ -518,3 +519,46 @@ class GemmaWithTextTstepEncoder(TstepEncoder):
         combined_emb = torch.cat([text_emb, numerical_emb], dim=-1)
 
         return combined_emb
+
+
+@gin.configurable
+class IdentityTrajEncoder(TrajEncoder):
+    """
+    Identity/passthrough trajectory encoder for use with Gemma.
+
+    Since Gemma already processes sequences with causal attention in the TstepEncoder,
+    we don't need an additional trajectory encoder. This just passes through the
+    Gemma outputs directly to the actor/critic heads.
+
+    Args:
+        tstep_dim: Dimension of the input timestep representation (output of GemmaTstepEncoder)
+        max_seq_len: Maximum sequence length (unused, but required by TrajEncoder interface)
+    """
+
+    def __init__(self, tstep_dim: int, max_seq_len: int):
+        super().__init__(tstep_dim, max_seq_len)
+        self._emb_dim = tstep_dim
+
+    def forward(self, seq, time_idxs=None, hidden_state=None, log_dict=None):
+        """
+        Pass through the sequence without modification.
+
+        Args:
+            seq: Input sequence of shape (batch, seq_len, tstep_dim)
+            time_idxs: Unused
+            hidden_state: Unused (always None for transformer-based models)
+            log_dict: Optional logging dictionary
+
+        Returns:
+            (seq, None) - The input sequence unchanged, and None for hidden_state
+        """
+        return seq, None
+
+    @property
+    def emb_dim(self):
+        """Output dimension (same as input)."""
+        return self._emb_dim
+
+    def init_hidden_state(self, batch_size: int, device: torch.device):
+        """No hidden state needed for passthrough."""
+        return None

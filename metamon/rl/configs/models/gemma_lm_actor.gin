@@ -1,0 +1,42 @@
+import amago.nets.actor_critic
+import amago.experiment
+
+# Gemma with LM head as actor
+# Actor uses Gemma's language modeling head (predicts action tokens)
+# Critic uses separate MLP head (predicts values)
+
+MetamonAMAGOExperiment.agent_type = @GemmaLMAgent
+MetamonAMAGOExperiment.tstep_encoder_type = @MinimalTstepEncoder
+MetamonAMAGOExperiment.traj_encoder_type = @GemmaLMTrajEncoder
+MetamonAMAGOExperiment.max_seq_len = 32
+# val_interval controlled by train.py (default 1 = every epoch)
+MetamonAMAGOExperiment.start_learning_at_epoch = 0  # Start training immediately
+MetamonAMAGOExperiment.train_timesteps_per_epoch = 0  # Pure offline, no env interaction
+# val_timesteps_per_epoch controlled by train.py (default 300 per actor)
+MetamonAMAGOExperiment.mixed_precision = "bf16"  # Use bfloat16 for RTX 5090 (Ampere+)
+
+# Critic head (still separate MLP)
+GemmaLMAgent.critic_type = @actor_critic.NCriticsTwoHot
+actor_critic.NCriticsTwoHot.activation = "leaky_relu"
+actor_critic.NCriticsTwoHot.n_layers = 2
+actor_critic.NCriticsTwoHot.d_hidden = 512
+GemmaLMAgent.popart = True
+GemmaLMAgent.num_critics = 6
+
+# Two-hot distributional value estimation
+actor_critic.NCriticsTwoHot.output_bins = 96
+actor_critic.NCriticsTwoHot.min_return = -1100
+actor_critic.NCriticsTwoHot.max_return = 1100
+actor_critic.NCriticsTwoHot.use_symlog = False
+
+# Gemma with LM head - MEMORY OPTIMIZED
+GemmaLMTrajEncoder.model_name = "google/gemma-3-270m"
+GemmaLMTrajEncoder.use_lora = True
+GemmaLMTrajEncoder.lora_r = 8
+GemmaLMTrajEncoder.lora_alpha = 16
+GemmaLMTrajEncoder.lora_dropout = 0.05
+GemmaLMTrajEncoder.use_4bit = True  # 4-bit for RTX 5090
+GemmaLMTrajEncoder.gradient_checkpointing = True
+GemmaLMTrajEncoder.max_tokens_per_obs = 256
+GemmaLMTrajEncoder.separator = " | "
+GemmaLMTrajEncoder.action_space_size = 13  # Metamon's DefaultActionSpace

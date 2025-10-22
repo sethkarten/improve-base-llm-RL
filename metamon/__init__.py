@@ -1,7 +1,12 @@
 import os
+import warnings
 from importlib.metadata import version
 
 __version__ = "1.4.0"
+
+# Suppress gym deprecation warnings from dependencies
+warnings.filterwarnings("ignore", message=".*Gym has been unmaintained.*")
+warnings.filterwarnings("ignore", message=".*Please upgrade to Gymnasium.*")
 
 poke_env_version = version("poke-env")
 

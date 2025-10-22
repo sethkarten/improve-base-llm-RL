@@ -1,0 +1,43 @@
+import amago.nets.actor_critic
+import amago.experiment
+
+# Gemma with LM head as actor - H100 FULL FINE-TUNING
+# Actor uses Gemma's language modeling head (predicts action tokens)
+# Critic uses separate MLP head (predicts values)
+# No LoRA, No quantization, No gradient checkpointing - full training on H100s
+
+MetamonAMAGOExperiment.agent_type = @GemmaLMAgent
+MetamonAMAGOExperiment.tstep_encoder_type = @MinimalTstepEncoder
+MetamonAMAGOExperiment.traj_encoder_type = @GemmaLMTrajEncoder
+MetamonAMAGOExperiment.max_seq_len = 32
+# val_interval controlled by train.py (default 1 = every epoch)
+MetamonAMAGOExperiment.start_learning_at_epoch = 0  # Start training immediately
+MetamonAMAGOExperiment.train_timesteps_per_epoch = 0  # Pure offline, no env interaction
+# val_timesteps_per_epoch controlled by train.py (default 300 per actor)
+MetamonAMAGOExperiment.mixed_precision = "bf16"  # Use bfloat16 for H100
+
+# Critic head (still separate MLP)
+GemmaLMAgent.critic_type = @actor_critic.NCriticsTwoHot
+actor_critic.NCriticsTwoHot.activation = "leaky_relu"
+actor_critic.NCriticsTwoHot.n_layers = 2
+actor_critic.NCriticsTwoHot.d_hidden = 512
+GemmaLMAgent.popart = True
+GemmaLMAgent.num_critics = 6
+
+# Two-hot distributional value estimation
+actor_critic.NCriticsTwoHot.output_bins = 96
+actor_critic.NCriticsTwoHot.min_return = -1100
+actor_critic.NCriticsTwoHot.max_return = 1100
+actor_critic.NCriticsTwoHot.use_symlog = False
+
+# Gemma with LM head - FULL FINE-TUNING FOR H100
+GemmaLMTrajEncoder.model_name = "google/gemma-3-270m"
+GemmaLMTrajEncoder.use_lora = False  # Full fine-tuning on H100
+GemmaLMTrajEncoder.lora_r = 8  # Ignored when use_lora=False
+GemmaLMTrajEncoder.lora_alpha = 16  # Ignored when use_lora=False
+GemmaLMTrajEncoder.lora_dropout = 0.05  # Ignored when use_lora=False
+GemmaLMTrajEncoder.use_4bit = False  # Full precision (bf16 via mixed_precision)
+GemmaLMTrajEncoder.gradient_checkpointing = False  # Disabled for speed on H100
+GemmaLMTrajEncoder.max_tokens_per_obs = 256
+GemmaLMTrajEncoder.separator = " | "
+GemmaLMTrajEncoder.action_space_size = 13  # Metamon's DefaultActionSpace

@@ -2,6 +2,9 @@ import os
 from functools import partial
 from typing import List, Optional
 
+# Set PyTorch allocator to reduce fragmentation (using new env var name)
+os.environ['PYTORCH_ALLOC_CONF'] = 'expandable_segments:True'
+
 import wandb
 
 import amago
@@ -24,8 +27,12 @@ from metamon.rl.metamon_to_amago import (
 )
 from metamon import baselines
 
-# Import Gemma encoder for gin configs
-from metamon.il.gemma_model import GemmaTstepEncoder
+# Import Gemma encoders for gin configs
+from metamon.il.gemma_model import GemmaTstepEncoder, IdentityTrajEncoder
+from metamon.il.gemma_temporal_model import GemmaTextTstepEncoder, GemmaTemporalTrajEncoder
+from metamon.il.gemma_sequence_model import MinimalTstepEncoder, GemmaSequenceTrajEncoder
+from metamon.il.gemma_lm_actor import GemmaLMTrajEncoder
+from metamon.rl.gemma_lm_agent import GemmaLMAgent
 
 
 WANDB_PROJECT = os.environ.get("METAMON_WANDB_PROJECT")
@@ -235,6 +242,8 @@ def create_offline_rl_trainer(
         "MetamonTstepEncoder.tokenizer": obs_space.tokenizer,
         "MetamonPerceiverTstepEncoder.tokenizer": obs_space.tokenizer,
         "GemmaTstepEncoder.pokemon_tokenizer": obs_space.tokenizer,
+        "MinimalTstepEncoder.pokemon_tokenizer": obs_space.tokenizer,
+        "GemmaTextTstepEncoder.pokemon_tokenizer": obs_space.tokenizer,
     }
     if manual_gin_overrides is not None:
         config.update(manual_gin_overrides)
@@ -305,7 +314,7 @@ def create_offline_rl_trainer(
         ## optimization ##
         batch_size=batch_size_per_gpu,
         batches_per_update=grad_accum,
-        mixed_precision="no",
+        # mixed_precision set in gin config (e.g., "bf16" for RTX 5090)
     )
     return experiment
 
