@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=metamon-gemma-lm
+#SBATCH --job-name=metamonpokechampv2-gemma-lm
 #SBATCH --output=logs/gemma_lm_h100_%j.out
 #SBATCH --error=logs/gemma_lm_h100_%j.err
 #SBATCH -N 1 #nodes
 #SBATCH -n 1 #tasks
-#SBATCH --gres=gpu:8
-#SBATCH --cpus-per-task=64
-#SBATCH --mem=996G
-#SBATCH --time=71:59:00
+#SBATCH --gres=gpu:2
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=128G
+#SBATCH --time=00:59:00
 #SBATCH --partition=pli-lc
 #SBATCH --account=chi_jin_group
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -44,9 +44,9 @@ echo ""
 # Create logs directory
 mkdir -p logs
 
-# Activate conda environment
-source ~/anaconda3/etc/profile.d/conda.sh
-conda activate metamon
+# # Activate conda environment
+# source ~/anaconda3/etc/profile.d/conda.sh
+# conda activate metamon
 
 # Set environment variables for offline mode
 export HF_HUB_OFFLINE=1
@@ -81,10 +81,14 @@ echo ""
 echo "Starting training..."
 echo ""
 
+cd showdown
+nohup node pokemon-showdown start --no-security 2>&1 >showdown.log &
+cd ..
+
 # Run training with accelerate for multi-GPU
 # AMAGO uses Accelerate internally for distributed training
 accelerate launch \
-    --num_processes 8 \
+    --num_processes 2 \
     --num_machines 1 \
     --mixed_precision bf16 \
     --multi_gpu \
