@@ -9,7 +9,7 @@ import amago.experiment
 MetamonAMAGOExperiment.agent_type = @GemmaLMAgent
 MetamonAMAGOExperiment.tstep_encoder_type = @MinimalTstepEncoder
 MetamonAMAGOExperiment.traj_encoder_type = @GemmaLMTrajEncoder
-MetamonAMAGOExperiment.max_seq_len = 16
+MetamonAMAGOExperiment.max_seq_len = 2
 # val_interval controlled by train.py (default 1 = every epoch)
 MetamonAMAGOExperiment.start_learning_at_epoch = 0  # Start training immediately
 MetamonAMAGOExperiment.train_timesteps_per_epoch = 0  # Pure offline, no env interaction
