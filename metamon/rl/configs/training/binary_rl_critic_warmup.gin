@@ -29,10 +29,5 @@ MetamonAMAGOExperiment.grad_clip = 1.5
 MetamonAMAGOExperiment.critic_loss_weight = 10.
 MetamonAMAGOExperiment.lr_warmup_steps = 1000
 
-# DISABLE parameter freezing since it's slower than expected
-# Just rely on offline_coeff=0.0 to prevent actor training
-MetamonAMAGOExperiment.freeze_actor_for_critic_warmup = False
-MetamonAMAGOExperiment.detach_actor_gradients = False
-
 # Note: After critic warmup (e.g., 2-5 epochs), switch to binary_rl.gin
 # to enable actor training with offline_coeff = 1.0
