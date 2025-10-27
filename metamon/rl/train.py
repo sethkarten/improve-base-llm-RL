@@ -165,6 +165,13 @@ def add_cli(parser):
         default=None,
         help="Showdown battle formats to include in the dataset. Defaults to all supported formats.",
     )
+    parser.add_argument(
+        "--wins_losses_both",
+        type=str,
+        default="both",
+        choices=["wins", "losses", "both"],
+        help="Filter replays by outcome: 'wins' (only winning games), 'losses' (only losing games), or 'both' (all games). Default: 'both'.",
+    )
     parser.add_argument("--log", action="store_true", help="Log to wandb.")
     return parser
 
@@ -178,6 +185,7 @@ def create_offline_dataset(
     custom_replay_sample_weight: float = 0.25,
     verbose: bool = True,
     formats: Optional[List[str]] = None,
+    wins_losses_both: str = "both",
 ) -> amago.loading.RLDataset:
 
     formats = formats or metamon.SUPPORTED_BATTLE_FORMATS
@@ -188,6 +196,7 @@ def create_offline_dataset(
         # amago will handle sequence lengths on its side
         "max_seq_len": None,
         "formats": formats,
+        "wins_losses_both": wins_losses_both,
         "verbose": verbose,  # False to hide dset setup progress bar
     }
     parsed_replays_amago = MetamonAMAGODataset(
@@ -355,6 +364,7 @@ if __name__ == "__main__":
         custom_replay_dir=args.custom_replay_dir,
         custom_replay_sample_weight=args.custom_replay_sample_weight,
         formats=args.formats,
+        wins_losses_both=args.wins_losses_both,
     )
 
     # quick-setup for an offline RL experiment
